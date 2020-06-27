@@ -1,0 +1,3 @@
+include ':hangulbuilder'
+include ':app'
+rootProject.name = "HangulBuilder"
