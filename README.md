@@ -2,6 +2,22 @@ HangulBuilder
 =======
 HangulBuilder is a library for creating Hangul Syllables.
 
+Setup
+=======
+```
+allprojects {
+    repositories {
+        ...
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+```
+dependencies {
+    implementation 'com.github.dncks1525:HangulBuilder:{lastest_version}'
+}
+```
 
 How do I use it?
 =======
