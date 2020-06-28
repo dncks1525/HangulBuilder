@@ -2,6 +2,22 @@ package com.chani.hangulbuilder
 
 import java.lang.StringBuilder
 
+/**
+ * Copyright (C) 2020 dncks1525
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 object HangulBuilder {
     private const val BASE_UNICODE = '가'
     private const val JUNGSEONG_COUNT = 21
@@ -45,7 +61,7 @@ object HangulBuilder {
         Detachable('ㅢ', 'ㅡ', 'ㅣ')
     )
 
-    private val strBuilder = StringBuilder()
+    private val decomposeBuilder = StringBuilder()
     private val hangulBuilder = StringBuilder()
 
     fun add(vararg str: String): String {
@@ -81,10 +97,11 @@ object HangulBuilder {
                         }
                     }
                     last.isHangulLetter() -> {
-                        hangulBuilder.delete(size - 2, size)
                         decompose(last.toString()).apply {
                             if (this.length > 2) {
                                 if (target.isVowel()) {
+                                    hangulBuilder.delete(size - 2, size)
+
                                     val consonants =
                                         detachableConsonants.find { it.origin == this[2] }
                                     if (consonants != null) {
@@ -101,6 +118,7 @@ object HangulBuilder {
                                     detachableConsonants.find {
                                         it.first == this[2] && it.second == target
                                     }?.let {
+                                        hangulBuilder.delete(size - 2, size)
                                         hangulBuilder.append(compose(this[0], this[1], it.origin))
                                     }
                                 }
@@ -111,12 +129,14 @@ object HangulBuilder {
                                         detachableVowels.find {
                                             it.first == this[1] && it.second == target
                                         }?.let {
+                                            hangulBuilder.delete(size - 2, size)
                                             hangulBuilder.append(compose(this[0], it.origin))
                                         }
                                     }
                                     target.isConsonant() -> {
                                         // ex) 고 + ㄱ -> 곡
                                         if (jongseongList.contains(target)) {
+                                            hangulBuilder.delete(size - 2, size)
                                             hangulBuilder.append(compose(this[0], this[1], target))
                                         }
                                     }
@@ -170,6 +190,9 @@ object HangulBuilder {
                         hangulBuilder.append(it.first)
                     }
                 }
+                else -> {
+                    hangulBuilder.delete(size-1, size)
+                }
             }
         }
 
@@ -191,18 +214,18 @@ object HangulBuilder {
     fun decompose(str: String, separator: String = "", isSeparateAll: Boolean = false): String {
         if (str.isEmpty()) return str
 
-        strBuilder.clear()
+        decomposeBuilder.clear()
         if (isSeparateAll) {
             str.forEachIndexed { index, c ->
-                strBuilder.append(if (c.isHangulLetter()) c.separate(separator) else c)
-                if (index != str.lastIndex) strBuilder.append(separator)
+                decomposeBuilder.append(if (c.isHangulLetter()) c.separate(separator) else c)
+                if (index != str.lastIndex) decomposeBuilder.append(separator)
             }
         } else {
             val c = str.last()
-            strBuilder.append(if (c.isHangulLetter()) c.separate() else c)
+            decomposeBuilder.append(if (c.isHangulLetter()) c.separate() else c)
         }
 
-        return strBuilder.toString()
+        return decomposeBuilder.toString()
     }
 
     private fun Char.separate(separator: String = ""): String {

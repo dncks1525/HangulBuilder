@@ -7,30 +7,23 @@ class HangulBuilderTest {
     val builder = HangulBuilder
 
     @Test
-    fun assembleTest() {
+    fun composeTest() {
         builder.compose('ㄱ', 'ㅏ').also { assertThat(it).isEqualTo("가") }
-
         builder.compose('ㄱ', 'ㅏ', 'ㄳ').also { assertThat(it).isEqualTo("갃") }
     }
 
     @Test
-    fun disassembleTest() {
+    fun decomposeTest() {
         builder.decompose("가나다라").also { assertThat(it).isEqualTo("ㄹㅏ") }
-
         builder.decompose("가").also { assertThat(it).isEqualTo("ㄱㅏ") }
-
         builder.decompose("가나다라", isSeparateAll = true).also {
             assertThat(it).isEqualTo("ㄱㅏㄴㅏㄷㅏㄹㅏ")
         }
-
         builder.decompose("가나다라", ",", true).also {
             assertThat(it).isEqualTo("ㄱ,ㅏ,ㄴ,ㅏ,ㄷ,ㅏ,ㄹ,ㅏ")
         }
-
         builder.decompose(" ").also { assertThat(it).isEqualTo(" ") }
-
         builder.decompose("가나다ABC").also { assertThat(it).isEqualTo("C") }
-
         builder.decompose("가나다ABC나다라").also { assertThat(it).isEqualTo("ㄹㅏ") }
     }
 
