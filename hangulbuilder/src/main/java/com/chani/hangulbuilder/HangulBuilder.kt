@@ -142,25 +142,28 @@ object HangulBuilder {
                         if (this.length > 2) {
                             val consonants = detachableConsonants.find { it.origin == this[2] }
                             hangulBuilder.append(
-                                if (consonants != null) compose(
-                                    this[0],
-                                    this[1],
-                                    consonants.first
-                                ) else {
+                                if (consonants != null) {
+                                    // ex) 갉 -> 갈
+                                    compose(this[0], this[1], consonants.first)
+                                } else {
+                                    // ex) 갈 -> 가
                                     compose(this[0], this[1])
                                 }
                             )
                         } else if (this.length > 1) {
                             val vowels = detachableVowels.find { it.origin == this[1] }
                             if (vowels != null) {
+                                // ex) 쇄 -> 소
                                 hangulBuilder.append(compose(this[0], vowels.first))
                             } else {
+                                // ex) 갈가 -> 갉
                                 add(this[0].toString())
                             }
                         }
                     }
                 }
                 last.isVowel() -> {
+                    // ex) ㅙ -> ㅗ
                     hangulBuilder.delete(size-1, size)
 
                     detachableVowels.find { it.origin == last }?.let {

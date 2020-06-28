@@ -8,24 +8,16 @@ class HangulBuilderTest {
 
     @Test
     fun assembleTest() {
-        builder.compose('ㄱ', 'ㅏ').also {
-            assertThat(it).isEqualTo("가")
-        }
+        builder.compose('ㄱ', 'ㅏ').also { assertThat(it).isEqualTo("가") }
 
-        builder.compose('ㄱ', 'ㅏ', 'ㄳ').also {
-            assertThat(it).isEqualTo("갃")
-        }
+        builder.compose('ㄱ', 'ㅏ', 'ㄳ').also { assertThat(it).isEqualTo("갃") }
     }
 
     @Test
     fun disassembleTest() {
-        builder.decompose("가나다라").also {
-            assertThat(it).isEqualTo("ㄹㅏ")
-        }
+        builder.decompose("가나다라").also { assertThat(it).isEqualTo("ㄹㅏ") }
 
-        builder.decompose("가").also {
-            assertThat(it).isEqualTo("ㄱㅏ")
-        }
+        builder.decompose("가").also { assertThat(it).isEqualTo("ㄱㅏ") }
 
         builder.decompose("가나다라", isSeparateAll = true).also {
             assertThat(it).isEqualTo("ㄱㅏㄴㅏㄷㅏㄹㅏ")
@@ -35,17 +27,16 @@ class HangulBuilderTest {
             assertThat(it).isEqualTo("ㄱ,ㅏ,ㄴ,ㅏ,ㄷ,ㅏ,ㄹ,ㅏ")
         }
 
-        builder.decompose(" ").also {
-            assertThat(it).isEqualTo(" ")
-        }
+        builder.decompose(" ").also { assertThat(it).isEqualTo(" ") }
 
-        builder.decompose("가나다ABC").also {
-            assertThat(it).isEqualTo("C")
-        }
+        builder.decompose("가나다ABC").also { assertThat(it).isEqualTo("C") }
+
+        builder.decompose("가나다ABC나다라").also { assertThat(it).isEqualTo("ㄹㅏ") }
     }
 
     @Test
     fun addTest() {
+        builder.clear()
         builder.add("가나다라", "ㄱ").also { assertThat(it).isEqualTo("가나다락") }
 
         builder.clear()
@@ -81,6 +72,7 @@ class HangulBuilderTest {
 
     @Test
     fun removeTest() {
+        builder.clear()
         builder.add("갉")
         builder.remove().also { assertThat(it).isEqualTo("갈") }
 
@@ -101,23 +93,3 @@ class HangulBuilderTest {
         builder.remove().also { assertThat(it).isEqualTo("ㅗ") }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
