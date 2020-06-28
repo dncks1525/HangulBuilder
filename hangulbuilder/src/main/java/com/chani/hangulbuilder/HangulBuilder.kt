@@ -45,39 +45,158 @@ object HangulBuilder {
         Detachable('ㅢ', 'ㅡ', 'ㅣ')
     )
 
-    private val letterList = mutableListOf<String>()
     private val strBuilder = StringBuilder()
+    private val hangulBuilder = StringBuilder()
 
-    fun add(letter: String, index: Int = letter.lastIndex) {
-        
+    fun add(vararg str: String): String {
+        for (l in str) add(l)
+        return hangulBuilder.toString()
     }
 
-    fun remove() {
+    private fun add(str: String) {
+        if (str.isNotEmpty()) {
+            if (hangulBuilder.isEmpty()) {
+                hangulBuilder.append(str)
+            } else {
+                hangulBuilder.append(str)
+                val size = hangulBuilder.length
+                val last = hangulBuilder[size-2]
+                val target = hangulBuilder[size-1]
 
+                when {
+                    last.isConsonant() -> {
+                        if (target.isVowel()) {
+                            // ex) ㄱ + ㅏ -> 가
+                            hangulBuilder.delete(size-2, size)
+                            hangulBuilder.append(compose(last, target))
+                        }
+                    }
+                    last.isVowel() -> {
+                        if (target.isVowel()) {
+                            // ex) ㅗ + ㅐ -> ㅙ
+                            detachableVowels.find { it.first == last && it.second == target }?.let {
+                                hangulBuilder.delete(size-2, size)
+                                hangulBuilder.append(it.origin)
+                            }
+                        }
+                    }
+                    last.isHangulLetter() -> {
+                        hangulBuilder.delete(size - 2, size)
+                        decompose(last.toString()).apply {
+                            if (this.length > 2) {
+                                if (target.isVowel()) {
+                                    val consonants =
+                                        detachableConsonants.find { it.origin == this[2] }
+                                    if (consonants != null) {
+                                        // ex) 갉 + ㅏ -> 갈가
+                                        hangulBuilder.append(compose(this[0], this[1], consonants.first))
+                                        hangulBuilder.append(compose(consonants.second, target))
+                                    } else {
+                                        // ex) 갈 + ㅏ -> 가라
+                                        hangulBuilder.append(compose(this[0], this[1]))
+                                        hangulBuilder.append(compose(this[2], target))
+                                    }
+                                } else {
+                                    // ex) 갈 + ㄱ -> 갉
+                                    detachableConsonants.find {
+                                        it.first == this[2] && it.second == target
+                                    }?.let {
+                                        hangulBuilder.append(compose(this[0], this[1], it.origin))
+                                    }
+                                }
+                            } else {
+                                when {
+                                    target.isVowel() -> {
+                                        // ex) 고 + ㅐ -> 괘
+                                        detachableVowels.find {
+                                            it.first == this[1] && it.second == target
+                                        }?.let {
+                                            hangulBuilder.append(compose(this[0], it.origin))
+                                        }
+                                    }
+                                    target.isConsonant() -> {
+                                        // ex) 고 + ㄱ -> 곡
+                                        if (jongseongList.contains(target)) {
+                                            hangulBuilder.append(compose(this[0], this[1], target))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun remove(): String {
+        if (hangulBuilder.isNotEmpty()) {
+            val last = hangulBuilder.last()
+            val size = hangulBuilder.length
+
+            when {
+                last.isHangulLetter() -> {
+                    hangulBuilder.delete(size-1, size)
+
+                    decompose(last.toString()).apply {
+                        if (this.length > 2) {
+                            val consonants = detachableConsonants.find { it.origin == this[2] }
+                            hangulBuilder.append(
+                                if (consonants != null) compose(
+                                    this[0],
+                                    this[1],
+                                    consonants.first
+                                ) else {
+                                    compose(this[0], this[1])
+                                }
+                            )
+                        } else if (this.length > 1) {
+                            val vowels = detachableVowels.find { it.origin == this[1] }
+                            if (vowels != null) {
+                                hangulBuilder.append(compose(this[0], vowels.first))
+                            } else {
+                                add(this[0].toString())
+                            }
+                        }
+                    }
+                }
+                last.isVowel() -> {
+                    hangulBuilder.delete(size-1, size)
+
+                    detachableVowels.find { it.origin == last }?.let {
+                        hangulBuilder.append(it.first)
+                    }
+                }
+            }
+        }
+
+        return hangulBuilder.toString()
     }
 
     fun clear() {
-
+        hangulBuilder.clear()
     }
 
-    fun assemble(choseong: Char, jungseong: Char, jongseong: Char = '\u0000'): String =
+    @JvmOverloads
+    fun compose(choseong: Char, jungseong: Char, jongseong: Char = '\u0000'): String =
         (BASE_UNICODE
         + (choseongList.indexOf(choseong) * JUNGSEONG_COUNT * JONGSEONG_COUNT)
         + (jungseongList.indexOf(jungseong) * JONGSEONG_COUNT)
         + (jongseongList.indexOf(jongseong))).toString()
 
-    fun disassemble(str: String, isSeparateAll: Boolean = false, separator: String = ""): String {
+    @JvmOverloads
+    fun decompose(str: String, separator: String = "", isSeparateAll: Boolean = false): String {
         if (str.isEmpty()) return str
 
         strBuilder.clear()
         if (isSeparateAll) {
             str.forEachIndexed { index, c ->
-                strBuilder.append(if (c.isHangulLetters()) c.separate(separator) else c)
+                strBuilder.append(if (c.isHangulLetter()) c.separate(separator) else c)
                 if (index != str.lastIndex) strBuilder.append(separator)
             }
         } else {
             val c = str.last()
-            strBuilder.append(if (c.isHangulLetters()) c.separate() else c)
+            strBuilder.append(if (c.isHangulLetter()) c.separate() else c)
         }
 
         return strBuilder.toString()
@@ -106,7 +225,7 @@ object HangulBuilder {
 
     private fun Char.isVowel() = toString().matches(".*[ㅏ-ㅣ]+.*".toRegex())
 
-    private fun Char.isHangulLetters() = toString().matches("^[가-힣]*\$".toRegex())
+    private fun Char.isHangulLetter() = toString().matches("^[가-힣]*\$".toRegex())
 
     private data class Detachable(val origin: Char, val first: Char, val second: Char)
 }

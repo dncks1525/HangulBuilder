@@ -8,39 +8,116 @@ class HangulBuilderTest {
 
     @Test
     fun assembleTest() {
-        with(builder.assemble('ㄱ', 'ㅏ')) {
-            assertThat(this).isEqualTo("가")
+        builder.compose('ㄱ', 'ㅏ').also {
+            assertThat(it).isEqualTo("가")
         }
 
-        with(builder.assemble('ㄱ', 'ㅏ', 'ㄳ')) {
-            assertThat(this).isEqualTo("갃")
+        builder.compose('ㄱ', 'ㅏ', 'ㄳ').also {
+            assertThat(it).isEqualTo("갃")
         }
     }
 
     @Test
     fun disassembleTest() {
-        with(builder.disassemble("가나다라")) {
-            assertThat(this).isEqualTo("ㄹㅏ")
+        builder.decompose("가나다라").also {
+            assertThat(it).isEqualTo("ㄹㅏ")
         }
 
-        with(builder.disassemble("가")) {
-            assertThat(this).isEqualTo("ㄱㅏ")
+        builder.decompose("가").also {
+            assertThat(it).isEqualTo("ㄱㅏ")
         }
 
-        with(builder.disassemble("가나다라", true)) {
-            assertThat(this).isEqualTo("ㄱㅏㄴㅏㄷㅏㄹㅏ")
+        builder.decompose("가나다라", isSeparateAll = true).also {
+            assertThat(it).isEqualTo("ㄱㅏㄴㅏㄷㅏㄹㅏ")
         }
 
-        with(builder.disassemble("가나다라", true, ",")) {
-            assertThat(this).isEqualTo("ㄱ,ㅏ,ㄴ,ㅏ,ㄷ,ㅏ,ㄹ,ㅏ")
+        builder.decompose("가나다라", ",", true).also {
+            assertThat(it).isEqualTo("ㄱ,ㅏ,ㄴ,ㅏ,ㄷ,ㅏ,ㄹ,ㅏ")
         }
 
-        with(builder.disassemble(" ")) {
-            assertThat(this).isEqualTo(" ")
+        builder.decompose(" ").also {
+            assertThat(it).isEqualTo(" ")
         }
 
-        with(builder.disassemble("가나다ABC")) {
-            assertThat(this).isEqualTo("C")
+        builder.decompose("가나다ABC").also {
+            assertThat(it).isEqualTo("C")
         }
     }
+
+    @Test
+    fun addTest() {
+        builder.add("가나다라", "ㄱ").also { assertThat(it).isEqualTo("가나다락") }
+
+        builder.clear()
+        builder.add("ㄱ").also { assertThat(it).isEqualTo("ㄱ") }
+
+        builder.clear()
+        builder.add("ㄱ", "ㅏ").also { assertThat(it).isEqualTo("가") }
+
+        builder.clear()
+        builder.add("ㅗ", "ㅐ").also { assertThat(it).isEqualTo("ㅙ") }
+
+        builder.clear()
+        builder.add("ㅐ", "ㅗ").also { assertThat(it).isEqualTo("ㅐㅗ") }
+
+        builder.clear()
+        builder.add("ㄱ", "ㄱ", "ㄱ", "ㅗ").also { assertThat(it).isEqualTo("ㄱㄱ고") }
+
+        builder.clear()
+        builder.add("갉", "ㅏ").also { assertThat(it).isEqualTo("갈가") }
+
+        builder.clear()
+        builder.add("갈", "ㅏ").also { assertThat(it).isEqualTo("가라") }
+
+        builder.clear()
+        builder.add("갈", "ㄱ").also { assertThat(it).isEqualTo("갉") }
+
+        builder.clear()
+        builder.add("고", "ㅐ").also { assertThat(it).isEqualTo("괘") }
+
+        builder.clear()
+        builder.add("고", "ㄱ").also { assertThat(it).isEqualTo("곡") }
+    }
+
+    @Test
+    fun removeTest() {
+        builder.add("갉")
+        builder.remove().also { assertThat(it).isEqualTo("갈") }
+
+        builder.clear()
+        builder.add("갈")
+        builder.remove().also { assertThat(it).isEqualTo("가") }
+
+        builder.clear()
+        builder.add("쇄")
+        builder.remove().also { assertThat(it).isEqualTo("소") }
+
+        builder.clear()
+        builder.add("갈가")
+        builder.remove().also { assertThat(it).isEqualTo("갉") }
+
+        builder.clear()
+        builder.add("ㅙ")
+        builder.remove().also { assertThat(it).isEqualTo("ㅗ") }
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
