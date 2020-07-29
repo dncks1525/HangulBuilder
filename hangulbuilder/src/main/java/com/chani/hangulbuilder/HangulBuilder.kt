@@ -1,9 +1,7 @@
 package com.chani.hangulbuilder
 
-import java.lang.StringBuilder
-
 /**
- * Copyright (C) 2020 dncks1525
+ * Copyright (C) 2020 Lee Woochan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,28 +67,108 @@ object HangulBuilder {
         return hangulBuilder.toString()
     }
 
+    private fun add(input: String, index: Int = hangulBuilder.length) {
+        if (input.isEmpty()) return
+
+        val size = hangulBuilder.length
+        val idx = if (index-1 <= 0) 0 else if (index-1 >= size) size else index
+        if (idx == 0 || idx == size) {
+            hangulBuilder.append(input)
+        } else {
+            val letter = hangulBuilder[idx]
+            val addedLetter = input[0]
+
+            when {
+                letter.isConsonant() -> {
+                    if (addedLetter.isVowel()) {
+                        // ex) ㄱ + ㅏ -> 가
+                        hangulBuilder.delete(idx, idx + 1)
+                        hangulBuilder.append(compose(letter, addedLetter))
+                    }
+                }
+                letter.isVowel() -> {
+                    if (addedLetter.isVowel()) {
+                        // ex) ㅗ + ㅐ -> ㅙ
+                        detachableVowels.find { it.first == letter && it.second == addedLetter }?.let {
+                            hangulBuilder.delete(idx, idx + 1)
+                            hangulBuilder.append(it.origin)
+                        }
+                    }
+                }
+                letter.isHangulLetter() -> {
+                    decompose(letter.toString()).apply {
+                        if (this.length > 2) {
+                            if (addedLetter.isVowel()) {
+                                hangulBuilder.delete(size - 2, size)
+
+                                val consonants =
+                                    detachableConsonants.find { it.origin == this[2] }
+                                if (consonants != null) {
+                                    // ex) 갉 + ㅏ -> 갈가
+                                    hangulBuilder.append(compose(this[0], this[1], consonants.first))
+                                    hangulBuilder.append(compose(consonants.second, addedLetter))
+                                } else {
+                                    // ex) 갈 + ㅏ -> 가라
+                                    hangulBuilder.append(compose(this[0], this[1]))
+                                    hangulBuilder.append(compose(this[2], addedLetter))
+                                }
+                            } else {
+                                // ex) 갈 + ㄱ -> 갉
+                                detachableConsonants.find {
+                                    it.first == this[2] && it.second == addedLetter
+                                }?.let {
+                                    hangulBuilder.delete(size - 2, size)
+                                    hangulBuilder.append(compose(this[0], this[1], it.origin))
+                                }
+                            }
+                        } else {
+                            when {
+                                addedLetter.isVowel() -> {
+                                    // ex) 고 + ㅐ -> 괘
+                                    detachableVowels.find {
+                                        it.first == this[1] && it.second == addedLetter
+                                    }?.let {
+                                        hangulBuilder.delete(size - 2, size)
+                                        hangulBuilder.append(compose(this[0], it.origin))
+                                    }
+                                }
+                                addedLetter.isConsonant() -> {
+                                    // ex) 고 + ㄱ -> 곡
+                                    if (jongseongList.contains(addedLetter)) {
+                                        hangulBuilder.delete(size - 2, size)
+                                        hangulBuilder.append(compose(this[0], this[1], addedLetter))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun add(str: String) {
         if (str.isNotEmpty()) {
             if (hangulBuilder.isEmpty()) {
                 hangulBuilder.append(str)
-            } else {
+            } else  {
                 hangulBuilder.append(str)
                 val size = hangulBuilder.length
                 val last = hangulBuilder[size-2]
-                val target = hangulBuilder[size-1]
+                val input = hangulBuilder[size-1]
 
                 when {
                     last.isConsonant() -> {
-                        if (target.isVowel()) {
+                        if (input.isVowel()) {
                             // ex) ㄱ + ㅏ -> 가
                             hangulBuilder.delete(size-2, size)
-                            hangulBuilder.append(compose(last, target))
+                            hangulBuilder.append(compose(last, input))
                         }
                     }
                     last.isVowel() -> {
-                        if (target.isVowel()) {
+                        if (input.isVowel()) {
                             // ex) ㅗ + ㅐ -> ㅙ
-                            detachableVowels.find { it.first == last && it.second == target }?.let {
+                            detachableVowels.find { it.first == last && it.second == input }?.let {
                                 hangulBuilder.delete(size-2, size)
                                 hangulBuilder.append(it.origin)
                             }
@@ -99,7 +177,7 @@ object HangulBuilder {
                     last.isHangulLetter() -> {
                         decompose(last.toString()).apply {
                             if (this.length > 2) {
-                                if (target.isVowel()) {
+                                if (input.isVowel()) {
                                     hangulBuilder.delete(size - 2, size)
 
                                     val consonants =
@@ -107,16 +185,16 @@ object HangulBuilder {
                                     if (consonants != null) {
                                         // ex) 갉 + ㅏ -> 갈가
                                         hangulBuilder.append(compose(this[0], this[1], consonants.first))
-                                        hangulBuilder.append(compose(consonants.second, target))
+                                        hangulBuilder.append(compose(consonants.second, input))
                                     } else {
                                         // ex) 갈 + ㅏ -> 가라
                                         hangulBuilder.append(compose(this[0], this[1]))
-                                        hangulBuilder.append(compose(this[2], target))
+                                        hangulBuilder.append(compose(this[2], input))
                                     }
                                 } else {
                                     // ex) 갈 + ㄱ -> 갉
                                     detachableConsonants.find {
-                                        it.first == this[2] && it.second == target
+                                        it.first == this[2] && it.second == input
                                     }?.let {
                                         hangulBuilder.delete(size - 2, size)
                                         hangulBuilder.append(compose(this[0], this[1], it.origin))
@@ -124,20 +202,20 @@ object HangulBuilder {
                                 }
                             } else {
                                 when {
-                                    target.isVowel() -> {
+                                    input.isVowel() -> {
                                         // ex) 고 + ㅐ -> 괘
                                         detachableVowels.find {
-                                            it.first == this[1] && it.second == target
+                                            it.first == this[1] && it.second == input
                                         }?.let {
                                             hangulBuilder.delete(size - 2, size)
                                             hangulBuilder.append(compose(this[0], it.origin))
                                         }
                                     }
-                                    target.isConsonant() -> {
+                                    input.isConsonant() -> {
                                         // ex) 고 + ㄱ -> 곡
-                                        if (jongseongList.contains(target)) {
+                                        if (jongseongList.contains(input)) {
                                             hangulBuilder.delete(size - 2, size)
-                                            hangulBuilder.append(compose(this[0], this[1], target))
+                                            hangulBuilder.append(compose(this[0], this[1], input))
                                         }
                                     }
                                 }
